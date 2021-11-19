@@ -3,5 +3,20 @@
     "name": "Iuri",
     "age": 22,
     "city": "Niterói"
+  },
+  {
+    "name": "Pedro",
+    "age": 21,
+    "city": "Rio de Janeiro"
+  },
+  {
+    "name": "Roberta",
+    "age": 34,
+    "city": "Brasília"
+  },
+  {
+    "name": "Fernanda",
+    "age": 15,
+    "city": "Recife"
   }
 ]
