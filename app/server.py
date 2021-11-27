@@ -49,6 +49,18 @@ def update_user(user: dict) -> None:
             file.write(dumps(users))
 
 
+def delete_user(user: dict) -> None:
+    if user_exists(user):
+        users = get_users()
+
+        for u in users:
+            if u['id'] == user['id']:
+                users.remove(u)
+
+        with open('users.json', 'w') as file:
+            file.write(dumps(users))
+
+
 def find_path(path: str) -> str:
     if path.endswith('/'):
         path = path[:-1]
@@ -117,6 +129,24 @@ def put(environ: dict) -> None:
     update_user(user)
 
 
+def delete(environ: dict) -> None:
+    delete_data: str = environ['wsgi.input'].readline().decode('utf-8')
+    info_list = delete_data.split('&')
+
+    user = {}
+
+    for info in info_list:
+        aux = info.split('=')
+
+        key = aux[0]
+        value = aux[1].replace('+', ' ')
+
+        if key == 'id' or key == 'name' or key == 'age' or key == 'city':
+            user[key] = value
+
+    delete_user(user)
+
+
 def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
     method = environ['REQUEST_METHOD']
 
@@ -130,6 +160,10 @@ def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], No
 
     elif method == 'PUT':
         put(environ)
+        data = find_path('/users')
+
+    elif method == 'DELETE':
+        delete(environ)
         data = find_path('/users')
 
     else:
