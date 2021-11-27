@@ -5,7 +5,6 @@ from json import loads, dumps
 
 
 def get_users() -> List[dict]:
-
     with open('users.json', 'r') as file:
         return loads(file.read())
 
@@ -22,7 +21,6 @@ def get_user_by_id(user_id: str) -> dict:
 
 
 def add_user(user: dict) -> None:
-
     users = get_users()
     users.append(user)
 
@@ -31,7 +29,6 @@ def add_user(user: dict) -> None:
 
 
 def find_path(path: str) -> str:
-
     if path.endswith('/'):
         path = path[:-1]
 
@@ -52,12 +49,27 @@ def find_path(path: str) -> str:
 
 
 def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
-
-    # environ["wsgi.input"]
-
     method = environ['REQUEST_METHOD']
 
     if method == 'POST':
+        post_data: str = environ['wsgi.input'].readline().decode('utf-8')
+        info_list = post_data.split('&')
+
+        user = {'id': f'{abs(hash(str(post_data)))}'}
+
+        for info in info_list:
+            aux = info.split('=')
+
+            key = aux[0]
+            value = aux[1].replace('+', ' ')
+
+            if value.isnumeric():
+                value = int(value)
+
+            user[key] = value
+
+        add_user(user)
+
         data = find_path('/users')
 
     elif method == 'GET':
