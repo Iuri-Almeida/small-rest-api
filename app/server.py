@@ -1,8 +1,7 @@
 from typing import Callable, List, Tuple
 
 from app.errors.api_error import ApiError
-from routes import home, not_found
-from json import loads
+from json import loads, dumps
 
 
 def get_users() -> List[dict]:
@@ -11,16 +10,15 @@ def get_users() -> List[dict]:
         return loads(file.read())
 
 
-def get_user_by_name(name: str) -> dict:
-
+def get_user_by_id(user_id: str) -> dict:
     with open('users.json', 'r') as file:
         users: List[dict] = loads(file.read())
 
         for user in users:
-            if name.title() in user['name'].title().split():
+            if user_id == user['id']:
                 return user
 
-    raise ApiError(f'No user found with name `{name}`.')
+    raise ApiError(f'No user found with id `{user_id}`.')
 
 
 def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
@@ -30,13 +28,18 @@ def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], No
     if path.endswith('/'):
         path = path[:-1]
 
-    if path == '':  # index
-        user = get_user_by_name('Iuri')
-        users = get_users()
+    if path == '' or path == '/users':  # all users
+        data = dumps(get_users())
 
-        data = home({'user': user, 'users': users})
+    elif '/users/' in path:  # specific user
+        try:
+            user_id = path.split('/')[2]
+            data = dumps(get_user_by_id(user_id))
+        except ApiError:
+            data = f'Not found `{path}` path'
+
     else:  # other pages
-        data = not_found({'path': path})
+        data = f'Not found `{path}` path'
 
     data = data.encode('utf-8')
 
