@@ -24,7 +24,7 @@ def user_exists(user: dict) -> bool:
     try:
         get_user_by_id(user['id'])
         return True
-    except ApiError:
+    except (ApiError, KeyError):
         return False
 
 
@@ -32,6 +32,18 @@ def add_user(user: dict) -> None:
     if not user_exists(user):
         users = get_users()
         users.append(user)
+
+        with open('users.json', 'w') as file:
+            file.write(dumps(users))
+
+
+def update_user(user: dict) -> None:
+    if user_exists(user):
+        users = get_users()
+
+        for u in users:
+            if u['id'] == user['id']:
+                u.update(user)
 
         with open('users.json', 'w') as file:
             file.write(dumps(users))
@@ -69,24 +81,56 @@ def post(environ: dict) -> None:
         key = aux[0]
         value = aux[1].replace('+', ' ')
 
-        if value.isnumeric():
+        if key == 'age':
             value = int(value)
 
-        user[key] = value
+        if key == 'name':
+            value = value.title()
+
+        if key == 'name' or key == 'age' or key == 'city':
+            user[key] = value
 
     add_user(user)
+
+
+def put(environ: dict) -> None:
+    put_data: str = environ['wsgi.input'].readline().decode('utf-8')
+    info_list = put_data.split('&')
+
+    user = {}
+
+    for info in info_list:
+        aux = info.split('=')
+
+        key = aux[0]
+        value = aux[1].replace('+', ' ')
+
+        if key == 'age':
+            value = int(value)
+
+        if key == 'name':
+            value = value.title()
+
+        if key == 'id' or key == 'name' or key == 'age' or key == 'city':
+            user[key] = value
+
+    update_user(user)
 
 
 def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
     method = environ['REQUEST_METHOD']
 
-    if method == 'POST':
+    if method == 'GET':
+        path: str = environ.get('PATH_INFO')
+        data = find_path(path)
+
+    elif method == 'POST':
         post(environ)
         data = find_path('/users')
 
-    elif method == 'GET':
-        path: str = environ.get('PATH_INFO')
-        data = find_path(path)
+    elif method == 'PUT':
+        put(environ)
+        data = find_path('/users')
 
     else:
         raise ApiError(f'Did not understand `{method}` method.')
