@@ -21,9 +21,16 @@ def get_user_by_id(user_id: str) -> dict:
     raise ApiError(f'No user found with id `{user_id}`.')
 
 
-def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
+def add_user(user: dict) -> None:
 
-    path: str = environ.get('PATH_INFO')
+    users = get_users()
+    users.append(user)
+
+    with open('users.json', 'w') as file:
+        file.write(dumps(users))
+
+
+def find_path(path: str) -> str:
 
     if path.endswith('/'):
         path = path[:-1]
@@ -40,6 +47,25 @@ def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], No
 
     else:  # other pages
         data = f'Not found `{path}` path'
+
+    return data
+
+
+def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
+
+    # environ["wsgi.input"]
+
+    method = environ['REQUEST_METHOD']
+
+    if method == 'POST':
+        data = find_path('/users')
+
+    elif method == 'GET':
+        path: str = environ.get('PATH_INFO')
+        data = find_path(path)
+
+    else:
+        raise ApiError(f'Did not understand `{method}` method.')
 
     data = data.encode('utf-8')
 
