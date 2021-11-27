@@ -6,6 +6,8 @@
     GitHub: https://github.com/Iuri-Almeida
 
     Goal: Create an rest api
+
+    Reference: https://github.com/Iuri-Almeida/small-web-app
 """
 from abc import ABC
 from gunicorn.app.base import BaseApplication
