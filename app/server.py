@@ -1,6 +1,8 @@
-from typing import Callable, List, Tuple, Optional
+from typing import Callable, List, Tuple
+
+from app.errors.api_error import ApiError
 from routes import home, not_found
-from json import loads, dumps
+from json import loads
 
 
 def get_users() -> List[dict]:
@@ -9,16 +11,16 @@ def get_users() -> List[dict]:
         return loads(file.read())
 
 
-def get_user_by_name(name: str) -> Optional[dict]:
+def get_user_by_name(name: str) -> dict:
 
     with open('users.json', 'r') as file:
         users: List[dict] = loads(file.read())
 
         for user in users:
-            if name.title() in user['name'].split():
+            if name.title() in user['name'].title().split():
                 return user
 
-    return None
+    raise ApiError(f'No user found with name `{name}`.')
 
 
 def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
@@ -29,9 +31,10 @@ def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], No
         path = path[:-1]
 
     if path == '':  # index
-        user = get_user_by_name('Pedro')
+        user = get_user_by_name('Iuri')
+        users = get_users()
 
-        data = home({'user': dumps(user)})
+        data = home({'user': user, 'users': users})
     else:  # other pages
         data = not_found({'path': path})
 

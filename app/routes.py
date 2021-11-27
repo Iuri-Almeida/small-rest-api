@@ -1,8 +1,11 @@
+from my_template_engine.template_engine import TemplateEngine
+
+
 def render_template(template: str = 'index.html', context: dict = None) -> str:
 
     with open(f'app/pages/{template}', 'r') as file:
-        html = file.read()
-        html = html.format(**context or {})
+        engine = TemplateEngine(file.read())
+        html = engine.render(context or {})
 
     return html
 

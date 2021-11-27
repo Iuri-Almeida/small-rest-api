@@ -5,9 +5,11 @@
     <title>Small Rest Api</title>
 </head>
 <body>
-    <h1>Index</h1>
+    <h1>Hello, {{ user.name }}. You live in: {{ user.city }}</h1>
     <ul>
-        <li>{user}</li>
+        {% for u in users %}
+            <li>Name: {{ u.name }}, Age: {{ u.age }}, City: {{ u.city }}</li>
+        {% endfor %}
     </ul>
 </body>
 </html>
