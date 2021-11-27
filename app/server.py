@@ -20,12 +20,21 @@ def get_user_by_id(user_id: str) -> dict:
     raise ApiError(f'No user found with id `{user_id}`.')
 
 
-def add_user(user: dict) -> None:
-    users = get_users()
-    users.append(user)
+def user_exists(user: dict) -> bool:
+    try:
+        get_user_by_id(user['id'])
+        return True
+    except ApiError:
+        return False
 
-    with open('users.json', 'w') as file:
-        file.write(dumps(users))
+
+def add_user(user: dict) -> None:
+    if not user_exists(user):
+        users = get_users()
+        users.append(user)
+
+        with open('users.json', 'w') as file:
+            file.write(dumps(users))
 
 
 def find_path(path: str) -> str:
@@ -48,28 +57,31 @@ def find_path(path: str) -> str:
     return data
 
 
+def post(environ: dict) -> None:
+    post_data: str = environ['wsgi.input'].readline().decode('utf-8')
+    info_list = post_data.split('&')
+
+    user = {'id': f'{abs(hash(str(info_list)))}'}
+
+    for info in info_list:
+        aux = info.split('=')
+
+        key = aux[0]
+        value = aux[1].replace('+', ' ')
+
+        if value.isnumeric():
+            value = int(value)
+
+        user[key] = value
+
+    add_user(user)
+
+
 def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
     method = environ['REQUEST_METHOD']
 
     if method == 'POST':
-        post_data: str = environ['wsgi.input'].readline().decode('utf-8')
-        info_list = post_data.split('&')
-
-        user = {'id': f'{abs(hash(str(post_data)))}'}
-
-        for info in info_list:
-            aux = info.split('=')
-
-            key = aux[0]
-            value = aux[1].replace('+', ' ')
-
-            if value.isnumeric():
-                value = int(value)
-
-            user[key] = value
-
-        add_user(user)
-
+        post(environ)
         data = find_path('/users')
 
     elif method == 'GET':
