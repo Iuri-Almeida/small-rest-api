@@ -41,6 +41,9 @@ def add_user(user: dict) -> None:
         with open('users.json', 'w') as file:
             file.write(dumps(users))
 
+    else:
+        raise ApiError(f'User already there.')
+
 
 def update_user(user: dict) -> None:
     if user_exists(user):
@@ -54,6 +57,9 @@ def update_user(user: dict) -> None:
         with open('users.json', 'w') as file:
             file.write(dumps(users))
 
+    else:
+        raise ApiError(f'User does not exists.')
+
 
 def delete_user(user: dict) -> None:
     if user_exists(user):
@@ -65,6 +71,9 @@ def delete_user(user: dict) -> None:
 
         with open('users.json', 'w') as file:
             file.write(dumps(users))
+
+    else:
+        raise ApiError(f'User does not exists.')
 
 
 def find_path(path: str) -> str:
@@ -155,7 +164,8 @@ def delete(environ: dict) -> None:
     delete_user(user)
 
 
-def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
+def choosing_method(environ: dict) -> (str, bytes):
+    status_code = '200'
     method = environ['REQUEST_METHOD']
 
     if method == 'GET':
@@ -163,27 +173,39 @@ def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], No
         data = find_path(path)
 
     elif method == 'POST':
-        post(environ)
+        try:
+            post(environ)
+        except ApiError:
+            status_code = '400'
         data = find_path('/users')
 
     elif method == 'PUT':
-        put(environ)
+        try:
+            put(environ)
+        except ApiError:
+            status_code = '404'
         data = find_path('/users')
 
     elif method == 'DELETE':
-        delete(environ)
+        try:
+            delete(environ)
+        except ApiError:
+            status_code = '404'
         data = find_path('/users')
 
     else:
-        raise ApiError(f'Did not understand `{method}` method.')
+        status_code = '400'
+        data = find_path('/users')
 
-    data = data.encode('utf-8')
+    return status_code, data.encode('utf-8')
 
-    status = '200 OK'
+
+def app(environ: dict, start_response: Callable[[str, List[Tuple[str, str]]], None]) -> List[bytes]:
+    status_code, data = choosing_method(environ)
     headers = [
         ('Content-Type', 'text/html'),
         ('Content-Length', str(len(data)))
     ]
-    start_response(status, headers)
+    start_response(status_code, headers)
 
     return [data]
