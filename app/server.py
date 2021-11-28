@@ -1,3 +1,4 @@
+from hashlib import sha256
 from typing import Callable, List, Tuple
 
 from app.errors.api_error import ApiError
@@ -18,6 +19,10 @@ def get_user_by_id(user_id: str) -> dict:
                 return user
 
     raise ApiError(f'No user found with id `{user_id}`.')
+
+
+def get_user_hash(user: dict) -> str:
+    return sha256(f'{user["name"]}{user["age"]}{user["city"]}'.encode('utf-8')).hexdigest()
 
 
 def user_exists(user: dict) -> bool:
@@ -44,6 +49,7 @@ def update_user(user: dict) -> None:
         for u in users:
             if u['id'] == user['id']:
                 u.update(user)
+                u['id'] = get_user_hash(u)
 
         with open('users.json', 'w') as file:
             file.write(dumps(users))
@@ -85,7 +91,7 @@ def post(environ: dict) -> None:
     post_data: str = environ['wsgi.input'].readline().decode('utf-8')
     info_list = post_data.split('&')
 
-    user = {'id': f'{abs(hash(str(info_list)))}'}
+    user = {'id': ''}
 
     for info in info_list:
         aux = info.split('=')
@@ -96,11 +102,13 @@ def post(environ: dict) -> None:
         if key == 'age':
             value = int(value)
 
-        if key == 'name':
+        if key == 'name' or key == 'city':
             value = value.title()
 
         if key == 'name' or key == 'age' or key == 'city':
             user[key] = value
+
+    user['id'] = get_user_hash(user)
 
     add_user(user)
 
@@ -120,7 +128,7 @@ def put(environ: dict) -> None:
         if key == 'age':
             value = int(value)
 
-        if key == 'name':
+        if key == 'name' or key == 'city':
             value = value.title()
 
         if key == 'id' or key == 'name' or key == 'age' or key == 'city':
