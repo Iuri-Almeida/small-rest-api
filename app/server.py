@@ -1,5 +1,5 @@
 from cgi import FieldStorage
-from hashlib import sha256
+from hashlib import md5
 from typing import Callable, List, Tuple
 
 from app.errors.api_error import ApiError
@@ -23,7 +23,7 @@ def get_user_by_id(user_id: str) -> dict:
 
 
 def get_user_hash(user: dict) -> str:
-    return sha256(f'{user["name"]}{user["age"]}{user["city"]}'.encode('utf-8')).hexdigest()
+    return md5(f'{user["name"]}{user["age"]}{user["city"]}'.encode('utf-8')).hexdigest()
 
 
 def user_exists(user: dict) -> bool:
@@ -176,6 +176,8 @@ def choosing_method(environ: dict) -> (str, bytes):
         environ=environ,
     )
 
+    data = find_path('/users')
+
     if method == 'GET':
         path: str = environ.get('PATH_INFO')
         data = find_path(path)
@@ -185,25 +187,21 @@ def choosing_method(environ: dict) -> (str, bytes):
             post(request_data)
         except ApiError:
             status_code = '400'
-        data = find_path('/users')
 
     elif method == 'PUT':
         try:
             put(request_data)
         except ApiError:
             status_code = '404'
-        data = find_path('/users')
 
     elif method == 'DELETE':
         try:
             delete(request_data)
         except ApiError:
             status_code = '404'
-        data = find_path('/users')
 
     else:
         status_code = '400'
-        data = find_path('/users')
 
     return status_code, data.encode('utf-8')
 
