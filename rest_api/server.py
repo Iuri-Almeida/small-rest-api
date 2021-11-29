@@ -2,7 +2,7 @@ from cgi import FieldStorage
 from hashlib import md5
 from typing import Callable, List, Tuple
 
-from app.errors.api_error import ApiError
+from errors.api_error import ApiError
 from json import loads, dumps
 
 

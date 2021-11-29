@@ -10,9 +10,11 @@
     Reference: https://github.com/Iuri-Almeida/small-web-app
 """
 from abc import ABC
-from gunicorn.app.base import BaseApplication
-from server import app
 from typing import Callable, List, Tuple
+
+from gunicorn.app.base import BaseApplication
+
+from server import app
 
 
 class Application(BaseApplication, ABC):

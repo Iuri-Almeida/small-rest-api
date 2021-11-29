@@ -69,8 +69,10 @@ Todas as tecnologias usadas na realização do projeto:
 $ git clone https://github.com/Iuri-Almeida/small-rest-api.git
 # Acesse a pasta do projeto
 $ cd small-rest-api
+# Instalar dependência
+$ pip install -r requirements.txt
 # Iniciar o programa
-$ python main.py
+$ python rest_api/main.py
 ```
 
 </div>
