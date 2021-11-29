@@ -38,6 +38,7 @@
 Todas as tecnologias usadas na realização do projeto:
 
 * [Python][python] [Versão 3.8]
+* [Gunicord][gunicorn]
 * [PyCharm][pycharm]
 
 </div>
@@ -102,7 +103,7 @@ $ python rest_api/main.py
   ```python
   from requests import post
   
-  req = post('http://127.0.0.1:8000/users', data={'name': 'Iuri', 'age': 22, 'city': 'Niterói'})
+  res = post('http://127.0.0.1:8000/users', data={'name': 'Iuri', 'age': 22, 'city': 'Niterói'})
   ```
 
 * `PUT` <br />
@@ -110,7 +111,7 @@ $ python rest_api/main.py
   ```python
   from requests import put
   
-  req = put('http://127.0.0.1:8000/users', data={'id': '4601760041515573618', 'name': 'José'})
+  res = put('http://127.0.0.1:8000/users', data={'id': '4601760041515573618', 'name': 'José'})
   ```
 
 * `DELETE` <br />
@@ -118,7 +119,7 @@ $ python rest_api/main.py
   ```python
   from requests import delete
   
-  req = delete('http://127.0.0.1:8000/users', data={'id': '4601760041515573618'})
+  res = delete('http://127.0.0.1:8000/users', data={'id': '4601760041515573618'})
   ```
 
 </div>
@@ -136,6 +137,7 @@ Alguns locais de onde me baseei para realizar o projeto:
 </div>
 
 <!-- Links -->
+[gunicorn]: https://gunicorn.org/
 [small_web_app]: https://github.com/Iuri-Almeida/small-web-app
 [python]: https://www.python.org/
 [pycharm]: https://www.jetbrains.com/pycharm/
