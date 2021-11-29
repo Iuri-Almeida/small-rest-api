@@ -1,3 +1,4 @@
+from cgi import FieldStorage
 from hashlib import sha256
 from typing import Callable, List, Tuple
 
@@ -34,46 +35,87 @@ def user_exists(user: dict) -> bool:
 
 
 def add_user(user: dict) -> None:
-    if not user_exists(user):
-        users = get_users()
-        users.append(user)
+    if user['name'] is None or user['age'] is None or user['city'] is None:
+        raise ApiError('Missing user data.')
 
-        with open('users.json', 'w') as file:
-            file.write(dumps(users))
+    if not user['name'].replace(' ', '').isalnum() or not user['city'].replace(' ', '').isalnum():
+        raise ApiError('User name and city must be alphanumeric.')
 
-    else:
-        raise ApiError(f'User already there.')
+    if not user['age'].isnumeric():
+        raise ApiError('User age must be int type.')
+
+    user['name'] = user['name'].title()
+    user['age'] = int(user['age'])
+    user['city'] = user['city'].title()
+
+    new_user = {'id': get_user_hash(user)}
+    new_user.update(user)
+
+    if user_exists(new_user):
+        raise ApiError('User already there.')
+
+    users = get_users()
+    users.append(new_user)
+
+    with open('users.json', 'w') as file:
+        file.write(dumps(users))
 
 
 def update_user(user: dict) -> None:
-    if user_exists(user):
-        users = get_users()
+    if user['id'] is None:
+        raise ApiError('Missing user id.')
 
-        for u in users:
-            if u['id'] == user['id']:
-                u.update(user)
-                u['id'] = get_user_hash(u)
+    if not user_exists(user):
+        raise ApiError('User does not exists.')
 
-        with open('users.json', 'w') as file:
-            file.write(dumps(users))
+    for key in user.copy().keys():
+        if user[key] is None:
+            del user[key]
 
-    else:
-        raise ApiError(f'User does not exists.')
+    if 'name' in user.keys():
+        if not user['name'].replace(' ', '').isalnum():
+            raise ApiError('User name must be alphanumeric.')
+
+        user['name'] = user['name'].title()
+
+    if 'age' in user.keys():
+        if not user['age'].isnumeric():
+            raise ApiError('User age must be int type.')
+
+        user['age'] = int(user['age'])
+
+    if 'city' in user.keys():
+        if not user['city'].replace(' ', '').isalnum():
+            raise ApiError('User city must be alphanumeric.')
+
+        user['city'] = user['city'].title()
+
+    users = get_users()
+
+    for u in users:
+        if u['id'] == user['id']:
+            u.update(user)
+            u['id'] = get_user_hash(u)
+
+    with open('users.json', 'w') as file:
+        file.write(dumps(users))
 
 
 def delete_user(user: dict) -> None:
-    if user_exists(user):
-        users = get_users()
+    if user['id'] is None:
+        raise ApiError('Missing user id.')
 
-        for u in users:
-            if u['id'] == user['id']:
-                users.remove(u)
+    if not user_exists(user):
+        raise ApiError('User does not exists.')
 
-        with open('users.json', 'w') as file:
-            file.write(dumps(users))
+    users = get_users()
 
-    else:
-        raise ApiError(f'User does not exists.')
+    for u in users:
+        if u['id'] == user['id']:
+            users.remove(u)
+
+    with open('users.json', 'w') as file:
+        file.write(dumps(users))
 
 
 def find_path(path: str) -> str:
@@ -96,77 +138,43 @@ def find_path(path: str) -> str:
     return data
 
 
-def post(environ: dict) -> None:
-    post_data: str = environ['wsgi.input'].readline().decode('utf-8')
-    info_list = post_data.split('&')
-
-    user = {'id': ''}
-
-    for info in info_list:
-        aux = info.split('=')
-
-        key = aux[0]
-        value = aux[1].replace('+', ' ')
-
-        if key == 'age':
-            value = int(value)
-
-        if key == 'name' or key == 'city':
-            value = value.title()
-
-        if key == 'name' or key == 'age' or key == 'city':
-            user[key] = value
-
-    user['id'] = get_user_hash(user)
+def post(post_data: FieldStorage) -> None:
+    user = {
+        'name': post_data.getvalue('name'),
+        'age': post_data.getvalue('age'),
+        'city': post_data.getvalue('city')
+    }
 
     add_user(user)
 
 
-def put(environ: dict) -> None:
-    put_data: str = environ['wsgi.input'].readline().decode('utf-8')
-    info_list = put_data.split('&')
-
-    user = {}
-
-    for info in info_list:
-        aux = info.split('=')
-
-        key = aux[0]
-        value = aux[1].replace('+', ' ')
-
-        if key == 'age':
-            value = int(value)
-
-        if key == 'name' or key == 'city':
-            value = value.title()
-
-        if key == 'id' or key == 'name' or key == 'age' or key == 'city':
-            user[key] = value
+def put(put_data: FieldStorage) -> None:
+    user = {
+        'id': put_data.getvalue('id'),
+        'name': put_data.getvalue('name'),
+        'age': put_data.getvalue('age'),
+        'city': put_data.getvalue('city')
+    }
 
     update_user(user)
 
 
-def delete(environ: dict) -> None:
-    delete_data: str = environ['wsgi.input'].readline().decode('utf-8')
-    info_list = delete_data.split('&')
-
-    user = {}
-
-    for info in info_list:
-        aux = info.split('=')
-
-        key = aux[0]
-        value = aux[1].replace('+', ' ')
-
-        if key == 'id' or key == 'name' or key == 'age' or key == 'city':
-            user[key] = value
+def delete(delete_data: FieldStorage) -> None:
+    user = {
+        'id': delete_data.getvalue('id'),
+    }
 
     delete_user(user)
 
 
 def choosing_method(environ: dict) -> (str, bytes):
     status_code = '200'
+
     method = environ['REQUEST_METHOD']
+    request_data = FieldStorage(
+        fp=environ['wsgi.input'],
+        environ=environ,
+    )
 
     if method == 'GET':
         path: str = environ.get('PATH_INFO')
@@ -174,21 +182,21 @@ def choosing_method(environ: dict) -> (str, bytes):
 
     elif method == 'POST':
         try:
-            post(environ)
+            post(request_data)
         except ApiError:
             status_code = '400'
         data = find_path('/users')
 
     elif method == 'PUT':
         try:
-            put(environ)
+            put(request_data)
         except ApiError:
             status_code = '404'
         data = find_path('/users')
 
     elif method == 'DELETE':
         try:
-            delete(environ)
+            delete(request_data)
         except ApiError:
             status_code = '404'
         data = find_path('/users')
