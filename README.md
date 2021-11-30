@@ -38,7 +38,7 @@
 Todas as tecnologias usadas na realização do projeto:
 
 * [Python][python] [Versão 3.8]
-* [Gunicord][gunicorn]
+* [Gunicorn][gunicorn] [Versão 20.1.0]
 * [PyCharm][pycharm]
 
 </div>
